@@ -7,6 +7,15 @@
 
 import SwiftUI
 
+struct Title: ViewModifier {
+    func body(content: Content) -> some View {
+        content
+            .font(.largeTitle)
+            .foregroundColor(.white)
+            .fontWeight(.heavy)
+    }
+}
+
 struct ContentView: View {
     @State private var showingScore = false
     @State private var scoreTitle = ""
@@ -19,6 +28,7 @@ struct ContentView: View {
     
     var body: some View {
         ZStack {
+            //Background color
             RadialGradient(stops: [
                 .init(color: Color(red: 0.1, green: 0.2, blue: 0.45), location: 0.3),
                 .init(color: Color(red: 0.76, green: 0.15, blue: 0.26), location: 0.3)
@@ -30,10 +40,12 @@ struct ContentView: View {
                 
                 
                 Text("Guess the Flag")
-                    .foregroundColor(.white)
-                    .font(.largeTitle.bold())
+                    //.modifier(Title())
+                    .titleStyle()
                 
-                VStack(spacing: 15) {
+                Spacer()
+                
+                VStack(spacing: 30) {
                     VStack {
                         Text("Tap the flag of")
                             .foregroundStyle(.secondary)
@@ -48,19 +60,17 @@ struct ContentView: View {
                         Button {
                             flagTapped(number)
                             
+                            //Gets rid of duplicates in one game
                             if !countriesAsked.contains(countries[number]) {
                                 countriesAsked.append(countries[number])
                                 countries.remove(at: number)
                             }
                             
                         } label: {
-                            Image(countries[number])
-                                .renderingMode(.original)
-                                //.clipShape(Capsule())
-                                .shadow(radius: 10)
+                            FlagImageView(flag: self.countries[number])
                         }
                     }
-                }
+                }//VSTACK - white box
                 .frame(maxWidth: 300)
                 .padding(.vertical, 40)
                 .background(.thinMaterial)
@@ -80,14 +90,14 @@ struct ContentView: View {
         .alert(scoreTitle, isPresented: $showingScore) {
             if questionsAsked != 5 {
                 Button("Continue", action: askQuestion)
-            } else if questionsAsked == 5 {
+            } else {
                 Button("New Game", action: restartGame)
             }
             
         } message: {
             if questionsAsked != 5 {
                 Text("Your score is \(score)")
-            } else if questionsAsked == 5  {
+            } else {
                 Text("Final score: \(score)")
             }
         }
@@ -105,14 +115,14 @@ struct ContentView: View {
     }
     
     func askQuestion() {
-        //countries.shuffle()
         questionsAsked += 1
-    
     }
     
     func restartGame() {
+        //refreshing countries and countries asked array
         countries.append(contentsOf: countriesAsked)
         countriesAsked.removeAll()
+        
         countries.shuffle()
         correctAnswer = Int.random(in: 0...2)
         questionsAsked = 1
@@ -120,6 +130,13 @@ struct ContentView: View {
     }
     
 }
+
+extension View {
+    func titleStyle() -> some View {
+        modifier(Title())
+    }
+}
+
 
 struct ContentView_Previews: PreviewProvider {
     static var previews: some View {
