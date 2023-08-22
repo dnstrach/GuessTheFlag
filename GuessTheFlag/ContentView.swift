@@ -28,8 +28,12 @@ struct ContentView: View {
     
     @State private var rotation = 0.0
     @State private var fadeOutOpacity = false
-    @State private var buttonTapped = 0
     @State private var offset = CGFloat.zero
+    @State private var buttonTapped = 0
+    @State private var buttonPressed = false
+    @State private var firstFlagWrong = false
+    @State private var secondFlagWrong = false
+    @State private var thirdFlagWrong = false
     
     var body: some View {
         ZStack {
@@ -61,24 +65,21 @@ struct ContentView: View {
                             .italic()
                     }
                     
-                    ForEach(0..<3) { number in
+                    ForEach(0..<3, id: \.self) { number in
                         Button {
+                            
                             flagTapped(number)
-                            self.buttonTapped = number
-                            if buttonTapped != correctAnswer {
-                                withAnimation(.easeInOut(duration: 0.5)) {
-                                    self.offset = 200
-                                }
-                            }
-                                
-
+                            wrongFlagTapped(number)
+                                                            
                         } label: {
                             FlagImageView(flag: self.countries[number])
                             
                         }
                         .rotation3DEffect(.degrees(number == correctAnswer ? rotation: 0), axis: (x: 0, y: 1, z: 0))
-                        .opacity(number != correctAnswer && showingScore ? 0.25 : 1)
-                        .offset(x: number != self.correctAnswer ? self.offset : .zero, y: .zero)
+                        .opacity(number != correctAnswer && buttonPressed ? 0.25 : 1)
+                        .offset(x: firstFlagWrong && number == 0 ? self.offset : .zero, y: .zero)
+                        .offset(x: secondFlagWrong && number == 1 ? self.offset : .zero, y: .zero)
+                        .offset(x: thirdFlagWrong && number == 2 ? self.offset : .zero, y: .zero)
                     }
                 }//VSTACK - white box
                 .frame(maxWidth: 300)
@@ -114,6 +115,7 @@ struct ContentView: View {
     }
     
     func flagTapped(_ number: Int) {
+        buttonPressed = true
         
         if number == correctAnswer {
             scoreTitle = "Correct!"
@@ -126,7 +128,7 @@ struct ContentView: View {
             fadeOutOpacity = true
         }
         
-        DispatchQueue.main.asyncAfter(deadline: .now() + 4.0) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
             //Gets rid of duplicates in one game
             if !countriesAsked.contains(countries[number]) {
                 countriesAsked.append(countries[number])
@@ -134,16 +136,51 @@ struct ContentView: View {
             }
         }
         
-        showingScore = true
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+            showingScore = true
+        }
+        
+    }
+    
+    func wrongFlagTapped(_ number: Int) {
+        buttonTapped = number
+        
+        if buttonTapped == 0 && number != correctAnswer {
+            firstFlagWrong = true
+            withAnimation(.easeInOut(duration: 0.5)) {
+                self.offset = 200
+            }
+        }
+        
+        if buttonTapped == 1 && number != correctAnswer {
+            secondFlagWrong = true
+            withAnimation(.easeInOut(duration: 0.5)) {
+                self.offset = 200
+            }
+        }
+        
+        if buttonTapped == 2 && number != correctAnswer {
+            thirdFlagWrong = true
+            withAnimation(.easeInOut(duration: 0.5)) {
+                self.offset = 200
+            }
+        }
         
     }
     
     func askQuestion() {
         questionsAsked += 1
         showingScore = false
-        self.offset = .zero
-        //countries.shuffle()
-
+        offset = .zero
+        
+        withAnimation(.easeOut(duration: 2.0)) {
+            countries.shuffle()
+        }
+        
+        buttonPressed = false
+        firstFlagWrong = false
+        secondFlagWrong = false
+        thirdFlagWrong = false
         
     }
     
@@ -156,6 +193,12 @@ struct ContentView: View {
         correctAnswer = Int.random(in: 0...2)
         questionsAsked = 1
         score = 0
+        
+        buttonPressed = false
+        firstFlagWrong = false
+        secondFlagWrong = false
+        thirdFlagWrong = false
+        offset = .zero
     }
     
 }
