@@ -26,6 +26,11 @@ struct ContentView: View {
     @State private var countriesAsked = [String]()
     @State private var correctAnswer = Int.random(in: 0...2)
     
+    @State private var rotation = 0.0
+    @State private var fadeOutOpacity = false
+    @State private var buttonTapped = 0
+    @State private var offset = CGFloat.zero
+    
     var body: some View {
         ZStack {
             //Background color
@@ -33,14 +38,14 @@ struct ContentView: View {
                 .init(color: Color(red: 0.1, green: 0.2, blue: 0.45), location: 0.3),
                 .init(color: Color(red: 0.76, green: 0.15, blue: 0.26), location: 0.3)
             ], center: .top, startRadius: 100, endRadius: 700)
-                .ignoresSafeArea()
+            .ignoresSafeArea()
             
             VStack {
                 Spacer()
                 
                 
                 Text("Guess the Flag")
-                    //.modifier(Title())
+                //.modifier(Title())
                     .titleStyle()
                 
                 Spacer()
@@ -59,16 +64,21 @@ struct ContentView: View {
                     ForEach(0..<3) { number in
                         Button {
                             flagTapped(number)
-                            
-                            //Gets rid of duplicates in one game
-                            if !countriesAsked.contains(countries[number]) {
-                                countriesAsked.append(countries[number])
-                                countries.remove(at: number)
+                            self.buttonTapped = number
+                            if buttonTapped != correctAnswer {
+                                withAnimation(.easeInOut(duration: 0.5)) {
+                                    self.offset = 200
+                                }
                             }
-                            
+                                
+
                         } label: {
                             FlagImageView(flag: self.countries[number])
+                            
                         }
+                        .rotation3DEffect(.degrees(number == correctAnswer ? rotation: 0), axis: (x: 0, y: 1, z: 0))
+                        .opacity(number != correctAnswer && showingScore ? 0.25 : 1)
+                        .offset(x: number != self.correctAnswer ? self.offset : .zero, y: .zero)
                     }
                 }//VSTACK - white box
                 .frame(maxWidth: 300)
@@ -104,18 +114,37 @@ struct ContentView: View {
     }
     
     func flagTapped(_ number: Int) {
+        
         if number == correctAnswer {
-            scoreTitle = "Correct"
+            scoreTitle = "Correct!"
             score += 1
+            withAnimation {
+                rotation += 360
+            }
         } else {
             scoreTitle = "Wrong! \(countries[number]) is not the correct answer."
+            fadeOutOpacity = true
+        }
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 4.0) {
+            //Gets rid of duplicates in one game
+            if !countriesAsked.contains(countries[number]) {
+                countriesAsked.append(countries[number])
+                countries.remove(at: number)
+            }
         }
         
         showingScore = true
+        
     }
     
     func askQuestion() {
         questionsAsked += 1
+        showingScore = false
+        self.offset = .zero
+        //countries.shuffle()
+
+        
     }
     
     func restartGame() {
@@ -143,3 +172,4 @@ struct ContentView_Previews: PreviewProvider {
         ContentView()
     }
 }
+
